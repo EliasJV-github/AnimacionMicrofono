@@ -1,43 +1,60 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audio Reactive Hexagon</title>
-    <link rel="stylesheet" href="css/google.css">
-    <link rel="stylesheet" href="css/style.css">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>AsistenteEric</title>
+	<link rel="stylesheet" href="css/google.css">
+	<link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
-    <h1 class="title">Experiencia Interactiva</h1>
+	<h1 class="title">Hola soy eric, tu asisntete de voz</h1>
+	<div class="input-container">
+		<label for="nameInput" class="form-check-label">Nombre Completo:</label>
+		<input type="text" id="nameInput" placeholder="Nombre completo" value="Richard Gonzales vicker" />
+		<input type="checkbox" id="valorGenderInput" checked />
+		<label for="valorGenderInput" class="form-check-label">señor?</label>
+		<br>
+		<label for="ingresoPdhInput" class="form-check-label">Ingreso Mensual:</label>
+		<input type="text" id="ingresoPdhInput" placeholder="Ingreso PDH" value="10000" />
+		<input type="checkbox" id="valorDphInput" />
+		<label for="valorDphInput" class="form-check-label">PDH?</label>
+		<br>
+		<div class="btn-aling">
+			<button onclick="actualizarVariables()" class="btn-primary">Actualizar</button>
+		</div>
+		
+	</div>
+	<div class="ribbon-container">
+		<div class="ribbon">
+			<svg viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+				<!-- Línea de latido/electrocardiograma -->
+				<path id="heartbeat-line" fill="none" stroke="white" stroke-width="4" stroke-linecap="round"
+					opacity="0.6" />
+				<!-- Línea base horizontal -->
+				<line x1="0" y1="150" x2="1200" y2="150" stroke="white" stroke-width="1" opacity="0.2" />
+			</svg>
+		</div>
+	</div>
 
-    <div class="ribbon-container">
-        <div class="ribbon">
-            <svg viewBox="0 0 1200 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                <!-- Línea de latido/electrocardiograma -->
-                <path id="heartbeat-line" 
-                      fill="none" 
-                      stroke="white" 
-                      stroke-width="4" 
-                      stroke-linecap="round"
-                      opacity="0.6"/>
-                <!-- Línea base horizontal -->
-                <line x1="0" y1="100" x2="1200" y2="100" 
-                      stroke="white" 
-                      stroke-width="1" 
-                      opacity="0.2"/>
-            </svg>
-        </div>
-    </div>
-
-    <div class="hexagon-container">
-        <div class="hexagon" id="hexagon"></div>
-    </div>
-
-    <p class="description">
-        Permite el acceso al micrófono para una experiencia visual que reacciona al sonido en tiempo real
-    </p>
-
-    <script src="js/anime.min.js"></script>
-    <script src="js/mic.js"></script>
+	<div class="footer">
+		<p class="description">Estas son mis funciones principales:</p>
+		<div class="footer-container">
+			<div class="card">Análisis de inversiones</div>
+			<div class="card">Recomendación de productos</div>
+			<div class="card">Seguimiento de transacciones</div>
+			<div class="card">Reportes especializados</div>
+			<div class="card">Gestión de cobranza</div>
+		</div>
+	</div>
+	<!-- <elevenlabs-convai agent-id="agent_4001k6x3snyxeg4b0xde485kac7r"></elevenlabs-convai> -->
+	<elevenlabs-convai id="elevenlabsWidget" agent-id="agent_2601k83yvscwf92b6d3bg7w97xze"
+		dynamic-variables='{"turno": "buenos dias", "name": "el señor Richard Gonzales vicker", "valor_dph": "true", "ingreso_pdh": "10000"}'></elevenlabs-convai>
+	<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+	<script src="js/anime.min.js"></script>
+	<script src="js/mic.js"></script>
+	<script src="js/acrualizarVariables.js"></script>
 </body>
 </html>
