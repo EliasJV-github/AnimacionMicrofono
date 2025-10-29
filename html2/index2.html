@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Reactive Blob</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            background: radial-gradient(ellipse at center, #003366 0%, #001a33 50%, #000000 100%);
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.8) 0%, transparent 15%, transparent 85%, rgba(0, 0, 0, 0.8) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .title {
+            text-align: center;
+            color: white;
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            padding: 2rem;
+            z-index: 10;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .blob-container {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 400px;
+            height: 400px;
+        }
+
+        #blobCanvas {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 50px rgba(0, 173, 255, 0.8)) 
+                    drop-shadow(0 0 100px rgba(0, 123, 255, 0.6));
+        }
+
+        .description {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            font-weight: 300;
+            padding: 2rem;
+            max-width: 600px;
+            z-index: 10;
+            text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: clamp(1.2rem, 6vw, 2rem);
+                letter-spacing: 2px;
+            }
+
+            .description {
+                font-size: clamp(0.8rem, 3vw, 1rem);
+                padding: 1.5rem;
+            }
+
+            .blob-container {
+                width: 300px;
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="title">Experiencia Interactiva</h1>
+
+    <div class="blob-container">
+        <canvas id="blobCanvas"></canvas>
+    </div>
+
+    <p class="description">
+        Permite el acceso al micrófono para una experiencia visual que reacciona al sonido en tiempo real
+    </p>
+
+    <script>
+        // Configuración del canvas
+        const canvas = document.getElementById('blobCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 400;
+        canvas.height = 400;
+
+        // Variables de audio
+        let audioContext;
+        let analyser;
+        let microphone;
+        let dataArray;
+        let isMicActive = false;
+
+        // Variables de animación
+        let time = 0;
+        let rotation = 0;
+        let baseScale = 1;
+        let audioScale = 0;
+
+        // Configuración del blob
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const baseRadius = 80;
+        const points = 12;
+
+        // Inicializar micrófono
+        async function initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.8;
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                
+                microphone.connect(analyser);
+                isMicActive = true;
+                
+                console.log('Micrófono activado');
+            } catch (error) {
+                console.log('Micrófono no disponible, usando animación por defecto');
+            }
+        }
+
+        // Calcular RMS del audio
+        function getRMS() {
+            if (!isMicActive) return 0;
+            
+            analyser.getByteTimeDomainData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                const normalized = (dataArray[i] - 128) / 128;
+                sum += normalized * normalized;
+            }
+            return Math.sqrt(sum / dataArray.length);
+        }
+
+        // Dibujar el blob
+        function drawBlob() {
+            // Limpiar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Obtener nivel de audio
+            const rms = getRMS();
+            
+            // Animación de respiración base
+            const breathe = Math.sin(time * 0.8) * 0.1;
+            baseScale = 1 + breathe;
+            
+            // Escala adicional por audio
+            audioScale += (rms * 1.5 - audioScale) * 0.2;
+            const totalScale = baseScale + audioScale;
+            
+            // Rotación
+            rotation += 0.5 + (rms * 2);
+            
+            // Generar puntos del blob
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate((rotation * Math.PI) / 180);
+            
+            ctx.beginPath();
+            
+            for (let i = 0; i <= points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                
+                // Variaciones orgánicas
+                const noise1 = Math.sin(angle * 3 + time * 0.5) * 15;
+                const noise2 = Math.cos(angle * 2 - time * 0.3) * 10;
+                const audioNoise = rms * 30;
+                
+                const radius = (baseRadius + noise1 + noise2 + audioNoise) * totalScale;
+                
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.closePath();
+            
+            // Gradiente radial
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, baseRadius * totalScale);
+            gradient.addColorStop(0, 'rgba(0, 220, 255, 1)');
+            gradient.addColorStop(0.5, 'rgba(0, 170, 255, 0.95)');
+            gradient.addColorStop(1, 'rgba(0, 120, 200, 0.85)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Borde sutil
+            ctx.strokeStyle = 'rgba(100, 200, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // Incrementar tiempo
+            time += 0.05;
+            
+            // Continuar animación
+            requestAnimationFrame(drawBlob);
+        }
+
+        // Iniciar
+        initMicrophone();
+        drawBlob();
+
+        // Limpiar al salir
+        window.addEventListener('beforeunload', () => {
+            if (audioContext) {
+                audioContext.close();
+            }
+        });
+    </script>
+</body>
+</html>
