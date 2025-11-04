@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente de Voz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3b82f6 100%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header - 15% */
+        header {
+            height: 15vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px 30px 0;
+        }
+
+        header h1 {
+            color: white;
+            font-size: 1.5em;
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Animación de voz - 25% */
+        .voice-section {
+            height: 25vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .voice-indicator {
+            width: min(200px, 40vw);
+            height: min(200px, 40vw);
+            max-width: 200px;
+            max-height: 200px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .voice-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .voice-circle:nth-child(1) {
+            animation: voicePulse 2s ease-in-out infinite;
+        }
+
+        .voice-circle:nth-child(2) {
+            animation: voicePulse 2s ease-in-out infinite 0.4s;
+            width: 85%;
+            height: 85%;
+        }
+
+        .voice-circle:nth-child(3) {
+            animation: voicePulse 2s ease-in-out infinite 0.8s;
+            width: 70%;
+            height: 70%;
+        }
+
+        .mic-icon {
+            width: min(90px, 18vw);
+            height: min(90px, 18vw);
+            max-width: 90px;
+            max-height: 90px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            animation: micFloat 3s ease-in-out infinite;
+        }
+
+        .mic-icon::before {
+            content: '🎙️';
+            font-size: min(40px, 8vw);
+        }
+
+        @keyframes voicePulse {
+            0%, 100% {
+                transform: scale(0.5);
+                opacity: 0.2;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes micFloat {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-10px) scale(1.05);
+            }
+        }
+
+        /* Main Content - 55% */
+        main {
+            height: 55vh;
+            padding: 20px 30px;
+            color: white;
+            overflow-y: auto;
+        }
+
+        main::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        main::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        main::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        /* ESTILOS BASE DE CAMPOS */
+        .input-base {
+            width: 100%;
+            height: 45px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+        }
+
+        .input-base:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .input-base:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Formulario */
+        .form-group {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        /* Labels flotantes */
+        label {
+            position: absolute;
+            left: 14px;
+            top: 11px;
+            font-size: 0.95em;
+            font-weight: 300;
+            opacity: 0.7;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+
+        .form-group.focused label,
+        .form-group.filled label {
+            top: -10px;
+            left: 10px;
+            font-size: 0.75em;
+            opacity: 0.8;
+            background: linear-gradient(180deg, transparent 0%, transparent 30%, #1e3a8a 30%, #1e3a8a 70%, transparent 70%);
+            padding: 0 6px;
+            text-shadow: none;
+        }
+
+        /* Label especial para selects (siempre arriba) */
+        .select-group label {
+            top: -10px;
+            left: 10px;
+            font-size: 0.75em;
+            opacity: 0.8;
+            background: linear-gradient(180deg, transparent 0%, transparent 30%, #1e3a8a 30%, #1e3a8a 70%, transparent 70%);
+            padding: 0 6px;
+            text-shadow: none;
+        }
+
+        /* Inputs de texto y número */
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            height: 45px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Inputs con controles +/- */
+        .input-with-controls {
+            position: relative;
+        }
+
+        .input-with-controls input {
+            padding-right: 70px;
+        }
+
+        .input-controls {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 4px;
+        }
+
+        .control-btn {
+            width: 28px;
+            height: 28px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            color: white;
+            font-size: 1.1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Selects personalizados */
+        .select-display {
+            width: 100%;
+            height: 45px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95em;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .select-display:hover,
+        .select-display.open {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .select-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .select-display.open .select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            background: rgba(30, 58, 138, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            z-index: 100;
+        }
+
+        .select-options.open {
+            max-height: 150px;
+            opacity: 1;
+            overflow-y: auto;
+        }
+
+        .select-option {
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .select-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .select-option.selected {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Checkbox - Misma altura que otros campos */
+        .checkbox-field {
+            height: 45px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 14px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-field:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .checkbox-field input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: white;
+            flex-shrink: 0;
+        }
+
+        .checkbox-field label {
+            position: static !important;
+            margin: 0;
+            font-size: 0.85em;
+            opacity: 0.9;
+            background: transparent !important;
+            padding: 0 !important;
+            cursor: pointer;
+            text-shadow: none !important;
+        }
+
+        /* Botón submit */
+        button[type="submit"] {
+            width: 100%;
+            height: 45px;
+            background: white;
+            color: #1e3a8a;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Footer - 5% */
+        footer {
+            height: 5vh;
+            background: rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.85em;
+            opacity: 0.9;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            main {
+                padding: 15px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.1em;
+            }
+
+            main {
+                padding: 12px 15px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .form-row {
+                margin-bottom: 15px;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            .select-display,
+            .checkbox-field,
+            button[type="submit"] {
+                height: 42px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Voice Agent</h1>
+        </header>
+
+        <div class="voice-section">
+            <div class="voice-indicator">
+                <div class="voice-circle"></div>
+                <div class="voice-circle"></div>
+                <div class="voice-circle"></div>
+                <div class="mic-icon"></div>
+            </div>
+        </div>
+
+        <main>
+            <form id="voiceForm">
+                <!-- Nombre -->
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <input type="text" id="nombre" name="nombre" required>
+                        <label>Nombre de la persona</label>
+                    </div>
+                </div>
+
+                <!-- Género y Región -->
+                <div class="form-row">
+                    <div class="form-group select-group">
+                        <div class="select-display" id="generoDisplay" onclick="toggleSelect('genero')">
+                            <span>Masculino</span>
+                            <span class="select-arrow">▼</span>
+                        </div>
+                        <div class="select-options" id="generoOptions">
+                            <div class="select-option selected" onclick="selectOption('genero', 'masculino', 'Masculino')">Masculino</div>
+                            <div class="select-option" onclick="selectOption('genero', 'femenino', 'Femenino')">Femenino</div>
+                            <div class="select-option" onclick="selectOption('genero', 'otro', 'Otro')">Otro</div>
+                        </div>
+                        <input type="hidden" id="genero" name="genero" value="masculino" required>
+                        <label>Género</label>
+                    </div>
+
+                    <div class="form-group select-group">
+                        <div class="select-display" id="regionDisplay" onclick="toggleSelect('region')">
+                            <span>Occidente</span>
+                            <span class="select-arrow">▼</span>
+                        </div>
+                        <div class="select-options" id="regionOptions">
+                            <div class="select-option selected" onclick="selectOption('region', 'occidente', 'Occidente')">Occidente</div>
+                            <div class="select-option" onclick="selectOption('region', 'centro', 'Centro')">Centro</div>
+                            <div class="select-option" onclick="selectOption('region', 'oriente', 'Oriente')">Oriente</div>
+                        </div>
+                        <input type="hidden" id="region" name="region" value="occidente" required>
+                        <label>Región</label>
+                    </div>
+                </div>
+
+                <!-- Sueldo y Crédito -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <div class="input-with-controls">
+                            <input type="number" id="sueldo" name="sueldo" step="100" required>
+                            <div class="input-controls">
+                                <button type="button" class="control-btn" onclick="adjustValue('sueldo', -100)">−</button>
+                                <button type="button" class="control-btn" onclick="adjustValue('sueldo', 100)">+</button>
+                            </div>
+                        </div>
+                        <label>Sueldo</label>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="input-with-controls">
+                            <input type="number" id="credito" name="credito" step="1000" required>
+                            <div class="input-controls">
+                                <button type="button" class="control-btn" onclick="adjustValue('credito', -1000)">−</button>
+                                <button type="button" class="control-btn" onclick="adjustValue('credito', 1000)">+</button>
+                            </div>
+                        </div>
+                        <label>Crédito</label>
+                    </div>
+                </div>
+
+                <!-- BCP y Plazo -->
+                <div class="form-row">
+                    <div class="checkbox-field">
+                        <input type="checkbox" id="bcp" name="bcp">
+                        <label>BCP</label>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="input-with-controls">
+                            <input type="number" id="plazo" name="plazo" value="12" min="12" max="120" step="12" required>
+                            <div class="input-controls">
+                                <button type="button" class="control-btn" onclick="adjustValue('plazo', -12)">−</button>
+                                <button type="button" class="control-btn" onclick="adjustValue('plazo', 12)">+</button>
+                            </div>
+                        </div>
+                        <label>Plazo (meses)</label>
+                    </div>
+                </div>
+
+                <button type="submit">Enviar Solicitud</button>
+            </form>
+        </main>
+
+        <footer>
+            <p>Funcionario Digital</p>
+        </footer>
+    </div>
+
+    <script>
+        let audioContext, analyser, microphone, animationRunning = false;
+
+        async function initVoiceAnimation() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false }
+                });
+                
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.7;
+                microphone.connect(analyser);
+                
+                animationRunning = true;
+                animateVoice();
+            } catch (err) {
+                defaultAnimation();
+            }
+        }
+
+        function animateVoice() {
+            if (!animationRunning) return;
+            
+            const dataArray = new Uint8Array(analyser.frequencyBinCount);
+            const circles = document.querySelectorAll('.voice-circle');
+            const micIcon = document.querySelector('.mic-icon');
+            
+            function animate() {
+                if (!animationRunning) return;
+                
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                const normalized = Math.min((sum / dataArray.length / 80) * 2, 2);
+                
+                circles.forEach((circle, index) => {
+                    const scale = 0.6 + normalized * 1.5 - (index * 0.15);
+                    const opacity = 0.2 + normalized * 0.6 - (index * 0.08);
+                    circle.style.transform = `scale(${Math.max(scale, 0.4)})`;
+                    circle.style.opacity = Math.max(opacity, 0.15);
+                    circle.style.transition = 'transform 0.05s ease-out, opacity 0.05s ease-out';
+                });
+                
+                micIcon.style.transform = `scale(${1 + normalized * 0.5})`;
+                micIcon.style.transition = 'transform 0.05s ease-out';
+                
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function defaultAnimation() {
+            const circles = document.querySelectorAll('.voice-circle');
+            let time = 0;
+            
+            function animate() {
+                time += 0.02;
+                const wave = Math.sin(time) * 0.5 + 0.5;
+                circles.forEach((circle, index) => {
+                    circle.style.transform = `scale(${0.8 + wave * 0.4 - index * 0.1})`;
+                    circle.style.opacity = 0.3 + wave * 0.4 - index * 0.1;
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        let started = false;
+        document.addEventListener('click', (e) => {
+            if (!started) {
+                started = true;
+                initVoiceAnimation();
+            }
+            
+            if (!e.target.closest('.form-group')) {
+                document.querySelectorAll('.select-options').forEach(opt => opt.classList.remove('open'));
+                document.querySelectorAll('.select-display').forEach(disp => disp.classList.remove('open'));
+            }
+        });
+
+        function toggleSelect(selectId) {
+            event.stopPropagation();
+            const display = document.getElementById(selectId + 'Display');
+            const options = document.getElementById(selectId + 'Options');
+            
+            document.querySelectorAll('.select-options').forEach(opt => {
+                if (opt.id !== selectId + 'Options') opt.classList.remove('open');
+            });
+            document.querySelectorAll('.select-display').forEach(disp => {
+                if (disp.id !== selectId + 'Display') disp.classList.remove('open');
+            });
+            
+            display.classList.toggle('open');
+            options.classList.toggle('open');
+        }
+
+        function selectOption(selectId, value, text) {
+            event.stopPropagation();
+            const input = document.getElementById(selectId);
+            const display = document.getElementById(selectId + 'Display');
+            const options = document.getElementById(selectId + 'Options');
+            
+            input.value = value;
+            display.querySelector('span:first-child').textContent = text;
+            
+            options.querySelectorAll('.select-option').forEach(opt => opt.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            display.classList.remove('open');
+            options.classList.remove('open');
+        }
+
+        function adjustValue(fieldId, increment) {
+            const input = document.getElementById(fieldId);
+            let value = parseFloat(input.value) || 0;
+            value += increment;
+            
+            if (fieldId === 'plazo') {
+                value = Math.max(12, Math.min(120, value));
+            } else {
+                value = Math.max(0, value);
+            }
+            
+            input.value = value;
+            input.closest('.form-group').classList.add('filled');
+        }
+
+        window.toggleSelect = toggleSelect;
+        window.selectOption = selectOption;
+        window.adjustValue = adjustValue;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.form-group').forEach(group => {
+                const input = group.querySelector('input[type="text"], input[type="number"]');
+                if (!input) return;
+                
+                input.addEventListener('focus', () => group.classList.add('focused'));
+                input.addEventListener('blur', () => {
+                    group.classList.remove('focused');
+                    if (input.value.trim() !== '') group.classList.add('filled');
+                    else group.classList.remove('filled');
+                });
+                
+                if (input.value.trim() !== '') group.classList.add('filled');
+            });
+        });
+
+        document.getElementById('voiceForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            console.log('Datos del formulario:', data);
+            alert('Solicitud enviada correctamente');
+        });
+    </script>
+</body>
+</html>
